@@ -1654,7 +1654,7 @@ $CONFIG = [
  *
  * Defaults to ``none``
  */
-'memcache.local' => '\OC\Memcache\APCu',
+'memcache.local' => '\\OC\\Memcache\\APCu',
 
 /**
  * Memory caching backend for distributed data
@@ -1664,7 +1664,7 @@ $CONFIG = [
  *
  * Defaults to ``none``
  */
-'memcache.distributed' => '\OC\Memcache\Memcached',
+'memcache.distributed' => '\\OC\\Memcache\\Memcached',
 
 /**
  * Connection details for Redis to use for memory caching in a single server configuration.
@@ -1791,6 +1791,15 @@ $CONFIG = [
  * Defaults to ``60*60*24`` (1 day)
  */
 'cache_chunk_gc_ttl' => 60*60*24,
+
+/**
+ * Enable caching of the app config values.
+ * If enabled the app config will be cached locally for a short TTL,
+ * reducing database load significatly on larger setups.
+ *
+ * Defaults to ``true``
+ */
+'cache_app_config' => true,
 
 /**
  * Using Object Store with Nextcloud
