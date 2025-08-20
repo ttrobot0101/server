@@ -12,7 +12,6 @@ use NCU\Security\Signature\ISignatureManager;
 use OC\Accounts\AccountManager;
 use OC\App\AppManager;
 use OC\App\AppStore\Bundles\BundleFetcher;
-use OC\App\AppStore\Fetcher\AppFetcher;
 use OC\AppFramework\Bootstrap\Coordinator;
 use OC\AppFramework\Http\Request;
 use OC\AppFramework\Http\RequestId;
@@ -66,7 +65,6 @@ use OC\FullTextSearch\FullTextSearchManager;
 use OC\Http\Client\ClientService;
 use OC\Http\Client\NegativeDnsCache;
 use OC\IntegrityCheck\Checker;
-use OC\IntegrityCheck\Helpers\AppLocator;
 use OC\IntegrityCheck\Helpers\EnvironmentHelper;
 use OC\IntegrityCheck\Helpers\FileAccessHelper;
 use OC\KnownUser\KnownUserService;
@@ -77,6 +75,7 @@ use OC\Lock\NoopLockingProvider;
 use OC\Lockdown\LockdownManager;
 use OC\Log\LogFactory;
 use OC\Log\PsrLoggerAdapter;
+use OC\Mail\EmailValidator;
 use OC\Mail\Mailer;
 use OC\Memcache\ArrayCache;
 use OC\Memcache\Factory;
@@ -195,6 +194,7 @@ use OCP\LDAP\ILDAPProviderFactory;
 use OCP\Lock\ILockingProvider;
 use OCP\Lockdown\ILockdownManager;
 use OCP\Log\ILogFactory;
+use OCP\Mail\IEmailValidator;
 use OCP\Mail\IMailer;
 use OCP\OCM\ICapabilityAwareOCMProvider;
 use OCP\OCM\IOCMDiscoveryService;
@@ -840,7 +840,6 @@ class Server extends ServerContainer implements IServerContainer {
 				$c->get(ServerVersion::class),
 				$c->get(EnvironmentHelper::class),
 				new FileAccessHelper(),
-				new AppLocator(),
 				$config,
 				$appConfig,
 				$c->get(ICacheFactory::class),
@@ -891,6 +890,9 @@ class Server extends ServerContainer implements IServerContainer {
 			);
 		});
 
+		/** @since 32.0.0 */
+		$this->registerAlias(IEmailValidator::class, EmailValidator::class);
+
 		$this->registerService(IMailer::class, function (Server $c) {
 			return new Mailer(
 				$c->get(\OCP\IConfig::class),
@@ -899,7 +901,8 @@ class Server extends ServerContainer implements IServerContainer {
 				$c->get(IURLGenerator::class),
 				$c->getL10N('lib'),
 				$c->get(IEventDispatcher::class),
-				$c->get(IFactory::class)
+				$c->get(IFactory::class),
+				$c->get(IEmailValidator::class),
 			);
 		});
 
@@ -1168,17 +1171,6 @@ class Server extends ServerContainer implements IServerContainer {
 		$this->registerService(IShareHelper::class, function (ContainerInterface $c) {
 			return new ShareHelper(
 				$c->get(\OCP\Share\IManager::class)
-			);
-		});
-
-		$this->registerService(Installer::class, function (ContainerInterface $c) {
-			return new Installer(
-				$c->get(AppFetcher::class),
-				$c->get(IClientService::class),
-				$c->get(ITempManager::class),
-				$c->get(LoggerInterface::class),
-				$c->get(\OCP\IConfig::class),
-				\OC::$CLI
 			);
 		});
 

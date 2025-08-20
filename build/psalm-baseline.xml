@@ -371,6 +371,12 @@
     </UndefinedMethod>
   </file>
   <file src="apps/dav/lib/CalDAV/Reminder/NotificationProvider/EmailProvider.php">
+    <DeprecatedMethod>
+      <code><![CDATA[validateMailAddress]]></code>
+      <code><![CDATA[validateMailAddress]]></code>
+      <code><![CDATA[validateMailAddress]]></code>
+      <code><![CDATA[validateMailAddress]]></code>
+    </DeprecatedMethod>
     <LessSpecificReturnStatement>
       <code><![CDATA[$emailAddresses]]></code>
     </LessSpecificReturnStatement>
@@ -452,6 +458,9 @@
     </DeprecatedMethod>
   </file>
   <file src="apps/dav/lib/CalDAV/Schedule/IMipPlugin.php">
+    <DeprecatedMethod>
+      <code><![CDATA[validateMailAddress]]></code>
+    </DeprecatedMethod>
     <RedundantCast>
       <code><![CDATA[(string)$iTipMessage->recipientName]]></code>
     </RedundantCast>
@@ -828,11 +837,6 @@
       <code><![CDATA[null]]></code>
     </NullableReturnStatement>
   </file>
-  <file src="apps/dav/lib/Direct/Server.php">
-    <UndefinedThisPropertyAssignment>
-      <code><![CDATA[$this->enablePropfindDepthInfinityf]]></code>
-    </UndefinedThisPropertyAssignment>
-  </file>
   <file src="apps/dav/lib/Files/FileSearchBackend.php">
     <InvalidReturnStatement>
       <code><![CDATA[$value]]></code>
@@ -862,6 +866,11 @@
   <file src="apps/dav/lib/Files/RootCollection.php">
     <DeprecatedMethod>
       <code><![CDATA[getUserFolder]]></code>
+    </DeprecatedMethod>
+  </file>
+  <file src="apps/dav/lib/Listener/CalendarContactInteractionListener.php">
+    <DeprecatedMethod>
+      <code><![CDATA[validateMailAddress]]></code>
     </DeprecatedMethod>
   </file>
   <file src="apps/dav/lib/Migration/BuildCalendarSearchIndex.php">
@@ -1554,7 +1563,6 @@
       <code><![CDATA[getAppValue]]></code>
       <code><![CDATA[getAppValue]]></code>
       <code><![CDATA[getAppValue]]></code>
-      <code><![CDATA[getAppValue]]></code>
     </DeprecatedMethod>
   </file>
   <file src="apps/files_sharing/lib/Controller/DeletedShareAPIController.php">
@@ -1572,6 +1580,7 @@
     </DeprecatedClass>
     <DeprecatedMethod>
       <code><![CDATA[getAppValue]]></code>
+      <code><![CDATA[validateMailAddress]]></code>
     </DeprecatedMethod>
     <RedundantCast>
       <code><![CDATA[(int)$code]]></code>
@@ -2079,6 +2088,7 @@
       <code><![CDATA[getAppValue]]></code>
       <code><![CDATA[getAppValue]]></code>
       <code><![CDATA[setAppValue]]></code>
+      <code><![CDATA[validateMailAddress]]></code>
     </DeprecatedMethod>
   </file>
   <file src="apps/settings/lib/Controller/WebAuthnController.php">
@@ -2201,6 +2211,10 @@
     </DeprecatedMethod>
   </file>
   <file src="apps/sharebymail/lib/ShareByMailProvider.php">
+    <DeprecatedMethod>
+      <code><![CDATA[validateMailAddress]]></code>
+      <code><![CDATA[validateMailAddress]]></code>
+    </DeprecatedMethod>
     <InvalidArgument>
       <code><![CDATA[$share->getId()]]></code>
       <code><![CDATA[(int)$data['id']]]></code>
@@ -3050,6 +3064,11 @@
       <code><![CDATA[listen]]></code>
     </DeprecatedMethod>
   </file>
+  <file src="core/Command/User/Add.php">
+    <DeprecatedMethod>
+      <code><![CDATA[validateMailAddress]]></code>
+    </DeprecatedMethod>
+  </file>
   <file src="core/Command/User/AuthTokens/Add.php">
     <DeprecatedClass>
       <code><![CDATA[IToken::DO_NOT_REMEMBER]]></code>
@@ -3297,14 +3316,6 @@
     <MoreSpecificReturnType>
       <code><![CDATA[ActivitySettings[]]]></code>
     </MoreSpecificReturnType>
-  </file>
-  <file src="lib/private/App/DependencyAnalyzer.php">
-    <InvalidNullableReturnType>
-      <code><![CDATA[bool]]></code>
-    </InvalidNullableReturnType>
-    <NullableReturnStatement>
-      <code><![CDATA[version_compare($first, $second, $operator)]]></code>
-    </NullableReturnStatement>
   </file>
   <file src="lib/private/AppFramework/Bootstrap/FunctionInjector.php">
     <UndefinedMethod>
@@ -3991,12 +4002,6 @@
     <UndefinedInterfaceMethod>
       <code><![CDATA[query]]></code>
     </UndefinedInterfaceMethod>
-  </file>
-  <file src="lib/private/Installer.php">
-    <InvalidArgument>
-      <code><![CDATA[false]]></code>
-      <code><![CDATA[false]]></code>
-    </InvalidArgument>
   </file>
   <file src="lib/private/IntegrityCheck/Checker.php">
     <InvalidArrayAccess>
