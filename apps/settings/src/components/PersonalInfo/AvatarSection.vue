@@ -86,9 +86,9 @@ import VueCropper from 'vue-cropperjs'
 // eslint-disable-next-line n/no-extraneous-import
 import 'cropperjs/dist/cropper.css'
 
-import Upload from 'vue-material-design-icons/Upload.vue'
+import Upload from 'vue-material-design-icons/TrayArrowUp.vue'
 import Folder from 'vue-material-design-icons/Folder.vue'
-import Delete from 'vue-material-design-icons/DeleteOutline.vue'
+import Delete from 'vue-material-design-icons/TrashCanOutline.vue'
 
 import HeaderBar from './shared/HeaderBar.vue'
 import { NAME_READABLE_ENUM } from '../../constants/AccountPropertyConstants.js'
