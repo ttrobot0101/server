@@ -1339,27 +1339,6 @@
       <code><![CDATA[isReadyForUser]]></code>
     </UndefinedInterfaceMethod>
   </file>
-  <file src="apps/files_external/ajax/applicable.php">
-    <DeprecatedMethod>
-      <code><![CDATA[\OC_JSON::callCheck()]]></code>
-      <code><![CDATA[\OC_JSON::checkAdminUser()]]></code>
-      <code><![CDATA[\OC_JSON::checkAppEnabled('files_external')]]></code>
-      <code><![CDATA[\OC_JSON::success($results)]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="apps/files_external/ajax/oauth2.php">
-    <DeprecatedMethod>
-      <code><![CDATA[\OC_JSON::callCheck()]]></code>
-      <code><![CDATA[\OC_JSON::checkAppEnabled('files_external')]]></code>
-      <code><![CDATA[\OC_JSON::checkLoggedIn()]]></code>
-      <code><![CDATA[getL10N]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="apps/files_external/appinfo/routes.php">
-    <InvalidScope>
-      <code><![CDATA[$this]]></code>
-    </InvalidScope>
-  </file>
   <file src="apps/files_external/lib/Command/Notify.php">
     <DeprecatedClass>
       <code><![CDATA[\OC_Util::normalizeUnicode($parent)]]></code>
@@ -4036,27 +4015,6 @@
     <MoreSpecificImplementedParamType>
       <code><![CDATA[$tag]]></code>
     </MoreSpecificImplementedParamType>
-  </file>
-  <file src="lib/private/Template/CSSResourceLocator.php">
-    <ParamNameMismatch>
-      <code><![CDATA[$style]]></code>
-      <code><![CDATA[$style]]></code>
-    </ParamNameMismatch>
-  </file>
-  <file src="lib/private/Template/JSConfigHelper.php">
-    <NullArgument>
-      <code><![CDATA[null]]></code>
-      <code><![CDATA[null]]></code>
-    </NullArgument>
-  </file>
-  <file src="lib/private/Template/JSResourceLocator.php">
-    <InvalidArgument>
-      <code><![CDATA[false]]></code>
-    </InvalidArgument>
-    <ParamNameMismatch>
-      <code><![CDATA[$script]]></code>
-      <code><![CDATA[$script]]></code>
-    </ParamNameMismatch>
   </file>
   <file src="lib/private/URLGenerator.php">
     <InvalidReturnStatement>
