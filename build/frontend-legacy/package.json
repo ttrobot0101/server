@@ -58,7 +58,7 @@
     "cancelable-promise": "^4.3.1",
     "clipboard": "^2.0.11",
     "color": "^5.0.2",
-    "core-js": "^3.45.0",
+    "core-js": "^3.46.0",
     "crypto-browserify": "^3.12.1",
     "davclient.js": "nextcloud-deps/davclient.js#59d7777d7fe290c5f1fd74a58e7eb529b63e153d",
     "debounce": "^2.2.0",
@@ -105,7 +105,7 @@
   "devDependencies": {
     "@babel/node": "^7.28.0",
     "@babel/plugin-transform-private-methods": "^7.27.1",
-    "@babel/preset-typescript": "^7.27.1",
+    "@babel/preset-typescript": "^7.28.5",
     "@codecov/webpack-plugin": "^1.9.1",
     "@nextcloud/babel-config": "^1.2.0",
     "@nextcloud/typings": "^1.9.1",
