@@ -14,7 +14,11 @@ use Aws\S3\Exception\S3Exception;
 use Aws\S3\S3Client;
 use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Promise\RejectedPromise;
+use OCP\EventDispatcher\IEventDispatcher;
+use OCP\Files\ObjectStore\Events\BucketCreatedEvent;
 use OCP\Files\StorageNotAvailableException;
+use OCP\ICache;
+use OCP\ICacheFactory;
 use OCP\ICertificateManager;
 use OCP\Server;
 use Psr\Log\LoggerInterface;
@@ -27,6 +31,8 @@ trait S3ConnectionTrait {
 	protected bool $test;
 
 	protected ?S3Client $connection = null;
+
+	private ?ICache $existingBucketsCache = null;
 
 	protected function parseParams($params) {
 		if (empty($params['bucket'])) {
@@ -80,6 +86,11 @@ trait S3ConnectionTrait {
 	public function getConnection() {
 		if ($this->connection !== null) {
 			return $this->connection;
+		}
+
+		if ($this->existingBucketsCache === null) {
+			$this->existingBucketsCache = Server::get(ICacheFactory::class)
+				->createLocal('s3-bucket-exists-cache');
 		}
 
 		$scheme = (isset($this->params['use_ssl']) && $this->params['use_ssl'] === false) ? 'http' : 'https';
@@ -143,22 +154,37 @@ trait S3ConnectionTrait {
 					['app' => 'objectstore']);
 			}
 
-			if ($this->params['verify_bucket_exists'] && !$this->connection->doesBucketExist($this->bucket)) {
-				try {
-					$logger->info('Bucket "' . $this->bucket . '" does not exist - creating it.', ['app' => 'objectstore']);
-					if (!$this->connection::isBucketDnsCompatible($this->bucket)) {
-						throw new StorageNotAvailableException('The bucket will not be created because the name is not dns compatible, please correct it: ' . $this->bucket);
+			if ($this->params['verify_bucket_exists']) {
+				$cacheKey = $this->params['hostname'] . $this->bucket;
+				$exist = $this->existingBucketsCache->get($cacheKey) === 1;
+
+				if (!$exist) {
+					if (!$this->connection->doesBucketExist($this->bucket)) {
+						try {
+							$logger->info('Bucket "' . $this->bucket . '" does not exist - creating it.', ['app' => 'objectstore']);
+							if (!$this->connection::isBucketDnsCompatible($this->bucket)) {
+								throw new StorageNotAvailableException('The bucket will not be created because the name is not dns compatible, please correct it: ' . $this->bucket);
+							}
+							$this->connection->createBucket(['Bucket' => $this->bucket]);
+							Server::get(IEventDispatcher::class)
+								->dispatchTyped(new BucketCreatedEvent(
+									$this->bucket,
+									$options['endpoint'],
+									$options['region'],
+									$options['version']
+								));
+							$this->testTimeout();
+						} catch (S3Exception $e) {
+							$logger->debug('Invalid remote storage.', [
+								'exception' => $e,
+								'app' => 'objectstore',
+							]);
+							if ($e->getAwsErrorCode() !== 'BucketAlreadyOwnedByYou') {
+								throw new StorageNotAvailableException('Creation of bucket "' . $this->bucket . '" failed. ' . $e->getMessage());
+							}
+						}
 					}
-					$this->connection->createBucket(['Bucket' => $this->bucket]);
-					$this->testTimeout();
-				} catch (S3Exception $e) {
-					$logger->debug('Invalid remote storage.', [
-						'exception' => $e,
-						'app' => 'objectstore',
-					]);
-					if ($e->getAwsErrorCode() !== 'BucketAlreadyOwnedByYou') {
-						throw new StorageNotAvailableException('Creation of bucket "' . $this->bucket . '" failed. ' . $e->getMessage());
-					}
+					$this->existingBucketsCache->set($cacheKey, 1);
 				}
 			}
 
