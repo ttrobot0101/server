@@ -39,6 +39,10 @@ trait S3ConnectionTrait {
 			throw new \Exception('Bucket has to be configured.');
 		}
 
+		if (isset($params['multibucket']) && $params['multibucket'] === true && isset($params['perBucket'][$params['bucket']])) {
+			$params = array_merge($params, $params['perBucket'][$params['bucket']]);
+		}
+
 		$this->id = 'amazon::' . $params['bucket'];
 
 		$this->test = isset($params['test']);
@@ -241,13 +245,13 @@ trait S3ConnectionTrait {
 
 	protected function getCertificateBundlePath(): ?string {
 		if ((int)($this->params['use_nextcloud_bundle'] ?? '0')) {
+			/** @var ICertificateManager $certManager */
+			$certManager = Server::get(ICertificateManager::class);
 			// since we store the certificate bundles on the primary storage, we can't get the bundle while setting up the primary storage
 			if (!isset($this->params['primary_storage'])) {
-				/** @var ICertificateManager $certManager */
-				$certManager = Server::get(ICertificateManager::class);
 				return $certManager->getAbsoluteBundlePath();
 			} else {
-				return \OC::$SERVERROOT . '/resources/config/ca-bundle.crt';
+				return $certManager->getDefaultCertificatesBundlePath();
 			}
 		} else {
 			return null;
