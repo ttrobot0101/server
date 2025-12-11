@@ -73,7 +73,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/vue": "^8.1.0",
     "@types/dockerode": "^3.3.47",
-    "@vitest/coverage-v8": "^4.0.14",
+    "@vitest/coverage-v8": "^4.0.15",
     "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.8.1",
     "@zip.js/zip.js": "^2.8.11",
@@ -90,10 +90,10 @@
     "is-svg": "^6.1.0",
     "jsdom": "^27.2.0",
     "jsdom-testing-mocks": "^1.16.0",
-    "sass": "^1.94.2",
+    "sass": "^1.95.1",
     "stylelint": "^16.26.1",
     "stylelint-use-logical": "^2.1.2",
-    "vite": "^7.2.4",
+    "vite": "^7.2.7",
     "vitest": "^4.0.14"
   },
   "engines": {
