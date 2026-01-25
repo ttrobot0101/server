@@ -135,8 +135,11 @@ This file is generated from multiple sources. Included packages:
 - @nextcloud/vue-select
 	- version: 3.26.0
 	- license: MIT
+- focus-trap
+	- version: 7.8.0
+	- license: MIT
 - @nextcloud/vue
-	- version: 8.35.2
+	- version: 8.35.3
 	- license: AGPL-3.0-or-later
 - @vue/devtools-api
 	- version: 6.6.4
@@ -202,7 +205,7 @@ This file is generated from multiple sources. Included packages:
 	- version: 1.1.6
 	- license: MIT
 - libphonenumber-js
-	- version: 1.12.34
+	- version: 1.12.35
 	- license: MIT
 - md5
 	- version: 2.3.0
