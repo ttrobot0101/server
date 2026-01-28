@@ -54,6 +54,7 @@ module.exports = {
 		'public-nickname-handler': path.join(__dirname, 'apps/files_sharing/src', 'public-nickname-handler.ts'),
 	},
 	settings: {
+		main: path.join(__dirname, 'apps/settings/src', 'main-settings.ts'),
 		'vue-settings-admin-overview': path.join(__dirname, 'apps/settings/src', 'main-admin-overview.ts'),
 		'vue-settings-admin-basic-settings': path.join(__dirname, 'apps/settings/src', 'main-admin-basic-settings.js'),
 		'vue-settings-admin-ai': path.join(__dirname, 'apps/settings/src', 'main-admin-ai.js'),
@@ -69,10 +70,6 @@ module.exports = {
 		'vue-settings-personal-security': path.join(__dirname, 'apps/settings/src', 'main-personal-security.js'),
 		'vue-settings-personal-webauthn': path.join(__dirname, 'apps/settings/src', 'main-personal-webauth.js'),
 		'declarative-settings-forms': path.join(__dirname, 'apps/settings/src', 'main-declarative-settings-forms.ts'),
-	},
-	systemtags: {
-		init: path.join(__dirname, 'apps/systemtags/src', 'init.ts'),
-		admin: path.join(__dirname, 'apps/systemtags/src', 'admin.ts'),
 	},
 	updatenotification: {
 		init: path.join(__dirname, 'apps/updatenotification/src', 'init.ts'),
