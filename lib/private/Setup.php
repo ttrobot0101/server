@@ -15,7 +15,7 @@ use InvalidArgumentException;
 use OC\Authentication\Token\PublicKeyTokenProvider;
 use OC\Authentication\Token\TokenCleanupJob;
 use OC\Core\BackgroundJobs\GenerateMetadataJob;
-use OC\Core\BackgroundJobs\MovePreviewJob;
+use OC\Core\BackgroundJobs\PreviewMigrationJob;
 use OC\Log\Rotate;
 use OC\Preview\BackgroundCleanupJob;
 use OC\TextProcessing\RemoveOldTasksBackgroundJob;
@@ -23,12 +23,14 @@ use OC\User\BackgroundJobs\CleanupDeletedUsers;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\Defaults;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
 use OCP\IConfig;
 use OCP\IGroup;
 use OCP\IGroupManager;
 use OCP\IL10N;
+use OCP\Install\Events\InstallationCompletedEvent;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
@@ -51,6 +53,7 @@ class Setup {
 		protected LoggerInterface $logger,
 		protected ISecureRandom $random,
 		protected Installer $installer,
+		protected IEventDispatcher $eventDispatcher,
 	) {
 		$this->l10n = $l10nFactory->get('lib');
 	}
@@ -495,6 +498,13 @@ class Setup {
 			}
 		}
 
+		// Dispatch installation completed event
+		$adminUsername = !$disableAdminUser ? ($options['adminlogin'] ?? null) : null;
+		$adminEmail = !empty($options['adminemail']) ? $options['adminemail'] : null;
+		$this->eventDispatcher->dispatchTyped(
+			new InstallationCompletedEvent($dataDir, $adminUsername, $adminEmail)
+		);
+
 		return $error;
 	}
 
@@ -506,7 +516,7 @@ class Setup {
 		$jobList->add(RemoveOldTasksBackgroundJob::class);
 		$jobList->add(CleanupDeletedUsers::class);
 		$jobList->add(GenerateMetadataJob::class);
-		$jobList->add(MovePreviewJob::class);
+		$jobList->add(PreviewMigrationJob::class);
 	}
 
 	/**
