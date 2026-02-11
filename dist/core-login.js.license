@@ -96,7 +96,7 @@ This file is generated from multiple sources. Included packages:
 	- version: 3.3.3
 	- license: GPL-3.0-or-later
 - @nextcloud/files
-	- version: 4.0.0-rc.1
+	- version: 4.0.0-rc.3
 	- license: AGPL-3.0-or-later
 - @nextcloud/initial-state
 	- version: 3.0.0
@@ -171,7 +171,7 @@ This file is generated from multiple sources. Included packages:
 	- version: 11.3.0
 	- license: MIT
 - axios
-	- version: 1.12.2
+	- version: 1.13.5
 	- license: MIT
 - backbone
 	- version: 1.6.1
