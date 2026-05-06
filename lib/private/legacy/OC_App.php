@@ -449,13 +449,11 @@ class OC_App {
 				if ($appPath !== false) {
 					$appIcon = $appPath . '/img/' . $app . '.svg';
 					if (file_exists($appIcon)) {
-						$info['preview'] = $urlGenerator->imagePath($app, $app . '.svg');
-						$info['previewAsIcon'] = true;
+						$info['icon'] = $urlGenerator->imagePath($app, $app . '.svg');
 					} else {
 						$appIcon = $appPath . '/img/app.svg';
 						if (file_exists($appIcon)) {
-							$info['preview'] = $urlGenerator->imagePath($app, 'app.svg');
-							$info['previewAsIcon'] = true;
+							$info['icon'] = $urlGenerator->imagePath($app, 'app.svg');
 						}
 					}
 				}
@@ -472,7 +470,9 @@ class OC_App {
 					}
 				}
 
+				$info['license'] ??= $info['licence'];
 				$info['version'] = $appManager->getAppVersion($app);
+				$info['license'] ??= $info['licence'];
 				$appList[] = $info;
 			}
 		}
