@@ -11,9 +11,9 @@
 			:triggers="[]"
 			placement="bottom-start"
 			:skidding="popoverSkidding"
-			:setReturnFocus="returnFocusTarget"
-			popoverBaseClass="app-menu__popover-base"
-			popupRole="menu"
+			:set-return-focus="returnFocusTarget"
+			popover-base-class="app-menu__popover-base"
+			popup-role="menu"
 			@update:shown="opened = $event">
 			<template #trigger>
 				<NcButton
@@ -40,7 +40,7 @@
 						ref="items"
 						:app="item"
 						:outlined="item.id === 'more-apps' || item.id === 'app-store'"
-						:newTab="item.id === 'app-store'"
+						:new-tab="item.id === 'app-store'"
 						:tabindex="i === focusedIndex ? 0 : -1" />
 				</div>
 			</div>
@@ -426,13 +426,13 @@ export default defineComponent({
 			box-shadow: inset 0 0 0 2px var(--color-background-plain-text) !important;
 		}
 
-		// Inner text slot needs min-width: 0 so the label can ellipsize.
+		// Lets the inner label shrink to its max-width and ellipsize instead of
+		// pushing the button wider than the inline-flex text slot.
 		:deep(.button-vue__text) {
 			min-width: 0;
 		}
 
-		// Hide on small screens (matches $breakpoint-small-mobile in @nextcloud/vue).
-		@media only screen and (max-width: 512px) {
+		@media only screen and (max-width: 1024px) {
 			display: none !important;
 		}
 	}
@@ -452,18 +452,23 @@ export default defineComponent({
 	}
 
 	&__current-app-name {
-		// inline-block: inline elements ignore max-width + overflow.
-		display: inline-block;
-		vertical-align: middle;
-		font-size: var(--default-font-size);
-		font-weight: 500;
-		white-space: nowrap;
-		letter-spacing: -0.5px;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		// Cap width so long titles ellipsize instead of pushing the header
-		// icons off-screen (.header-start doesn't shrink).
-		max-width: clamp(80px, 22vw, 320px);
+		// Hidden by default so the icon-only trigger fits alongside the
+		// centered search input. The button's aria-label still announces the
+		// section name. At wide viewports we restore the label with a
+		// truncation cap as a safety net for long localized names.
+		display: none;
+
+		@media only screen and (min-width: 1400px) {
+			display: inline-block;
+			vertical-align: middle;
+			font-size: var(--default-font-size);
+			font-weight: 500;
+			white-space: nowrap;
+			letter-spacing: -0.5px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			max-width: clamp(160px, 18vw, 360px);
+		}
 	}
 
 	&__popover {
