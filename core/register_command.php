@@ -17,9 +17,11 @@ use OC\Core\Command\App\Remove;
 use OC\Core\Command\App\Update;
 use OC\Core\Command\Background\Delete;
 use OC\Core\Command\Background\Job;
+use OC\Core\Command\Background\JobsHistory;
 use OC\Core\Command\Background\JobWorker;
 use OC\Core\Command\Background\ListCommand;
 use OC\Core\Command\Background\Mode;
+use OC\Core\Command\Background\RunningJobs;
 use OC\Core\Command\Broadcast\Test;
 use OC\Core\Command\Check;
 use OC\Core\Command\Config\App\DeleteConfig;
@@ -148,6 +150,8 @@ if ($config->getSystemValueBool('installed', false)) {
 	$application->add(Server::get(ListCommand::class));
 	$application->add(Server::get(Delete::class));
 	$application->add(Server::get(JobWorker::class));
+	$application->add(Server::get(RunningJobs::class));
+	$application->add(Server::get(JobsHistory::class));
 
 	$application->add(Server::get(Test::class));
 
