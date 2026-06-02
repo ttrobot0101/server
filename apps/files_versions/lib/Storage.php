@@ -205,6 +205,7 @@ class Storage {
 		}
 
 		$event = new CreateVersionEvent($file);
+		$eventDispatcher->dispatchTyped($event);
 		$eventDispatcher->dispatch('OCA\Files_Versions::createVersion', $event);
 		if ($event->shouldCreateVersion() === false) {
 			return false;
@@ -215,7 +216,6 @@ class Storage {
 
 		$versionManager->createVersion($user, $file);
 	}
-
 
 	/**
 	 * mark file as deleted so that we can remove the versions if the file is gone
