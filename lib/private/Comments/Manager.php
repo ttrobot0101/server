@@ -46,6 +46,9 @@ class Manager implements ICommentsManager {
 	/** @var \Closure[] */
 	protected array $displayNameResolvers = [];
 
+	// Modified by tests
+	protected int $chunkSize = 500;
+
 	public function __construct(
 		protected IDBConnection $dbConn,
 		protected LoggerInterface $logger,
@@ -704,7 +707,7 @@ class Manager implements ICommentsManager {
 		}
 
 		$unreadComments = array_fill_keys($objectIds, 0);
-		foreach (array_chunk($objectIds, 1000) as $chunk) {
+		foreach (array_chunk($objectIds, IQueryBuilder::MAX_IN_PARAMETERS) as $chunk) {
 			$query->setParameter('ids', $chunk, IQueryBuilder::PARAM_STR_ARRAY);
 
 			$result = $query->executeQuery();
@@ -1071,7 +1074,7 @@ class Manager implements ICommentsManager {
 			return [];
 		}
 
-		$chunks = array_chunk($commentIds, 500);
+		$chunks = array_chunk($commentIds, $this->chunkSize);
 
 		$query = $this->dbConn->getQueryBuilder();
 		$query->select('*')
