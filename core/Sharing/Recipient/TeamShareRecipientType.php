@@ -45,6 +45,7 @@ final class TeamShareRecipientType extends AShareRecipientTypeSearchCollaborator
 		$eventDispatcher->addServiceListener(DestroyingCircleEvent::class, self::class);
 	}
 
+	// CirclesManager class is not registered yet when the class is instantiated.
 	private function getTeamManager(): ITeamManager {
 		return $this->teamManager ??= Server::get(ITeamManager::class);
 	}
