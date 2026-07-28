@@ -87,12 +87,12 @@ final readonly class SharingManager implements ISharingManager, IEventListener {
 	}
 
 	#[\Override]
-	public function searchRecipients(ShareAccessContext $accessContext, ?array $recipientTypeClasses, string $query, int $limit, int $offset): array {
+	public function searchRecipients(ShareAccessContext $accessContext, ?array $filterRecipientTypeClasses, string $query, int $limit, int $offset, ?string $id = null): array {
 		$recipientTypes = $this->registry->getRecipientTypes();
 
-		if ($recipientTypeClasses !== null) {
+		if ($filterRecipientTypeClasses !== null) {
 			$filteredRecipientTypes = [];
-			foreach (array_unique($recipientTypeClasses) as $recipientTypeClass) {
+			foreach (array_unique($filterRecipientTypeClasses) as $recipientTypeClass) {
 				if (($recipientType = $recipientTypes[$recipientTypeClass] ?? null) === null) {
 					throw new RuntimeException('The recipient type is not registered: ' . $recipientTypeClass);
 				}
@@ -112,10 +112,25 @@ final readonly class SharingManager implements ISharingManager, IEventListener {
 			));
 		}
 
-		return array_merge(...array_map(
+		$results = array_merge(...array_map(
 			static fn (IShareRecipientTypeSearch $recipientType): array => $recipientType->searchRecipients($accessContext, $query, $limit, $offset),
 			$recipientTypes,
 		));
+
+		if ($id !== null) {
+			// Do not create a new access context with overridden checks, because it could leak the existence of shares and share recipients.
+			$share = $this->getShare($accessContext, $id);
+			$recipients = [];
+			foreach ($share->recipients as $recipient) {
+				$recipients[$recipient->class] ??= [];
+				$recipients[$recipient->class][$recipient->instance ?? ''] ??= [];
+				$recipients[$recipient->class][$recipient->instance ?? ''][$recipient->value] = true;
+			}
+
+			$results = array_values(array_filter($results, static fn (ShareRecipient $recipient): bool => !isset($recipients[$recipient->class][$recipient->instance ?? ''][$recipient->value])));
+		}
+
+		return $results;
 	}
 
 	#[\Override]
@@ -201,10 +216,12 @@ final readonly class SharingManager implements ISharingManager, IEventListener {
 			throw new ShareInvalidException('Invalid source: ' . $source->value . ' ' . $source->class, $this->l10n->t('The source does not exist.'));
 		}
 
-		$share = $this->getShare($accessContext, $id, $backend);
-		$sources = $share->sources;
-		$sources[] = $source;
-		$this->validateInteraction($accessContext, $owner, $sources, $share->getEnabledPermissions(), $share->recipients);
+		if (!$accessContext->overrideChecks) {
+			$share = $this->getShare($accessContext, $id, $backend);
+			$sources = $share->sources;
+			$sources[] = $source;
+			$this->validateInteraction($accessContext, $owner, $sources, $share->getEnabledPermissions(), $share->recipients);
+		}
 
 		$backend->addShareSource($id, $source);
 	}
@@ -277,10 +294,12 @@ final readonly class SharingManager implements ISharingManager, IEventListener {
 			throw new ShareInvalidException('Invalid recipient: ' . $recipient->value . ' ' . $recipient->class . ' ' . ($recipient->instance ?? 'local'), $this->l10n->t('The recipient does not exist.'));
 		}
 
-		$share ??= $this->getShare($accessContext, $id, $backend);
-		$recipients = $share->recipients;
-		$recipients[] = $recipient;
-		$this->validateInteraction($accessContext, $owner, $share->sources, $share->getEnabledPermissions(), $recipients);
+		if (!$accessContext->overrideChecks) {
+			$share ??= $this->getShare($accessContext, $id, $backend);
+			$recipients = $share->recipients;
+			$recipients[] = $recipient;
+			$this->validateInteraction($accessContext, $owner, $share->sources, $share->getEnabledPermissions(), $recipients);
+		}
 
 		$backend->addShareRecipient($id, $currentUser, $recipient);
 	}
@@ -400,8 +419,11 @@ final readonly class SharingManager implements ISharingManager, IEventListener {
 			throw new RuntimeException('The property is not registered: ' . $property->class);
 		}
 
-		if ($property->value !== null && ($message = $propertyType->validateValue($this->l10nFactory, $property->value)) !== true) {
-			throw new ShareInvalidException('Invalid property value: ' . $property->value . ' ' . $property->class, $message);
+		if ($property->value !== null) {
+			$share = $this->getShare($accessContext, $id);
+			if (($message = $propertyType->validateValue($this->l10nFactory, $share, $property->value)) !== true) {
+				throw new ShareInvalidException('Invalid property value: ' . $property->value . ' ' . $property->class, $message);
+			}
 		}
 
 		$backend->updateShareProperty($id, $property);
@@ -423,12 +445,12 @@ final readonly class SharingManager implements ISharingManager, IEventListener {
 			throw new RuntimeException('The permission type is not registered: ' . $permission->class);
 		}
 
-		$share = $this->getShare($accessContext, $id, $backend);
-
-		$permissions = $share->permissions;
-		$permissions[$permission->class] = $permission;
-
-		$this->validateInteraction($accessContext, $owner, $share->sources, array_filter($permissions, static fn (SharePermission $permission): bool => $permission->enabled), $share->recipients);
+		if (!$accessContext->overrideChecks) {
+			$share = $this->getShare($accessContext, $id, $backend);
+			$permissions = $share->permissions;
+			$permissions[$permission->class] = $permission;
+			$this->validateInteraction($accessContext, $owner, $share->sources, array_filter($permissions, static fn (SharePermission $permission): bool => $permission->enabled), $share->recipients);
+		}
 
 		$backend->updateSharePermission($id, $permission);
 
@@ -547,6 +569,7 @@ final readonly class SharingManager implements ISharingManager, IEventListener {
 	}
 
 	// TODO: Support IShareOwnerlessMount
+
 	/**
 	 * @throws ShareOperationForbiddenException
 	 */
@@ -668,7 +691,7 @@ final readonly class SharingManager implements ISharingManager, IEventListener {
 		$propertyTypes = $this->registry->getPropertyTypes();
 		foreach ($share->properties as $propertyTypeClass => $property) {
 			$propertyType = $propertyTypes[$propertyTypeClass];
-			if ($property->value === null && $propertyType->isRequired()) {
+			if ($property->value === null && $propertyType->isRequired($share)) {
 				throw new ShareInvalidException('Missing value for required property: ' . $propertyTypeClass, $this->l10n->t('You need to set a value for the %s', [$propertyType->getDisplayName($this->l10nFactory)]));
 			}
 		}
