@@ -27,6 +27,7 @@ use NCU\Sharing\Share;
 use NCU\Sharing\ShareAccessContext;
 use NCU\Sharing\ShareState;
 use NCU\Sharing\ShareUser;
+use NCU\Sharing\Source\IShareSourceMetadata;
 use NCU\Sharing\Source\IShareSourceType;
 use NCU\Sharing\Source\ShareSource;
 use OCP\DB\QueryBuilder\IQueryBuilder;
@@ -58,7 +59,7 @@ final readonly class SharingBackend implements ISharingBackend {
 	}
 
 	#[\Override]
-	public function createShare(string $id, ShareUser $owner, int $lastUpdated): void {
+	public function createShare(string $id, ShareUser $owner, \DateTimeImmutable $lastUpdated): void {
 		$qb = $this->connection->getQueryBuilder();
 		$qb
 			->insert('sharing_share')
@@ -66,7 +67,7 @@ final readonly class SharingBackend implements ISharingBackend {
 				'id' => $qb->createNamedParameter($id),
 				'owner_user_id' => $qb->createNamedParameter($owner->userId),
 				'owner_instance' => $qb->createNamedParameter($owner->instance),
-				'last_updated' => $qb->createNamedParameter($lastUpdated),
+				'last_updated' => $qb->createNamedParameter(SharingManager::timeToMs($lastUpdated)),
 				'state' => $qb->createNamedParameter(ShareState::Draft->value),
 			])
 			->executeStatement();
@@ -533,13 +534,13 @@ final readonly class SharingBackend implements ISharingBackend {
 	 * @param non-empty-list<string> $ids
 	 */
 	#[\Override]
-	public function setLastUpdated(array $ids, int $lastUpdated): void {
+	public function setLastUpdated(array $ids, \DateTimeImmutable $lastUpdated): void {
 		foreach (array_chunk($ids, 1000) as $chunk) {
 			$qb = $this->connection->getQueryBuilder();
 
 			$rowCount = $qb
 				->update('sharing_share')
-				->set('last_updated', $qb->createNamedParameter($lastUpdated, IQueryBuilder::PARAM_INT))
+				->set('last_updated', $qb->createNamedParameter(SharingManager::timeToMs($lastUpdated), IQueryBuilder::PARAM_INT))
 				->where($qb->expr()->in('id', $qb->createNamedParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)))
 				->executeStatement();
 			if ($rowCount !== count($chunk)) {
@@ -556,6 +557,7 @@ final readonly class SharingBackend implements ISharingBackend {
 
 	/**
 	 * @param ?class-string<IShareSourceType> $filterSourceTypeClass
+	 * @param ?non-empty-string $filterSourceTypeValue
 	 * @return list<Share>
 	 */
 	private function list(ShareAccessContext $accessContext, ?string $filterShareID, ?string $filterSourceTypeClass, ?string $filterSourceTypeValue, ?string $lastShareID, ?int $limit): array {
@@ -697,9 +699,14 @@ final readonly class SharingBackend implements ISharingBackend {
 		$chunks = array_chunk(array_keys($shares), 1000);
 
 		$registrySourceTypes = $this->registry->getSourceTypes();
-		/** @var array<int, array<class-string<IShareSourceType>, bool>> $shareSourceTypeClasses */
+		/** @var array<non-empty-string, array<class-string<IShareSourceType>, bool>> $shareSourceTypeClasses */
 		$shareSourceTypeClasses = [];
 		foreach ($chunks as $chunk) {
+			/** @var array<class-string<IShareSourceType>, non-empty-string[]> $shareSourceValues */
+			$shareSourceValues = [];
+			/** @var array<class-string<IShareSourceType>, array<non-empty-string, IShareSourceMetadata>> $shareSourceMetas */
+			$shareSourceMetas = [];
+
 			$qb = $this->connection->getQueryBuilder();
 			$qb
 				->select(
@@ -711,21 +718,38 @@ final readonly class SharingBackend implements ISharingBackend {
 				->where($qb->expr()->in('ss.share_id', $qb->createNamedParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)));
 
 			$result = $qb->executeQuery();
-			foreach ($result->fetchAll() as $row) {
-				/** @var class-string<IShareSourceType> $typeClass */
+			/** @var array{source_class: class-string<IShareSourceType>, source_value: non-empty-string, share_id: int}[] $rows */
+			$rows = $result->fetchAll();
+
+			foreach ($rows as $row) {
+				$typeClass = $row['source_class'];
+				$value = $row['source_value'];
+
+				$shareSourceValues[$typeClass] ??= [];
+				$shareSourceValues[$typeClass][] = $value;
+			}
+
+			foreach ($shareSourceValues as $typeClass => $values) {
+				if (($sourceType = ($this->registry->getSourceTypes()[$typeClass] ?? null)) === null) {
+					throw new RuntimeException('The source type is not registered: ' . $typeClass);
+				}
+
+				$shareSourceMetas[$typeClass] = $sourceType->getSourcesMetadata($values);
+			}
+
+			foreach ($rows as $row) {
 				$typeClass = $row['source_class'];
 				if (!isset($registrySourceTypes[$typeClass])) {
 					// Skip sources that are currently not compatible, but don't remove them.
 					continue;
 				}
 
-				/** @var non-empty-string $value */
 				$value = $row['source_value'];
-				/** @var non-empty-string $id */
 				$id = (string)$row['share_id'];
 				$shares[$id]['sources'][] = new ShareSource(
 					$typeClass,
 					$value,
+					$shareSourceMetas[$typeClass][$value] ?? null,
 				);
 
 				$shareSourceTypeClasses[$id] ??= [];
@@ -907,6 +931,7 @@ final readonly class SharingBackend implements ISharingBackend {
 		/** @var array<int, array<class-string<ISharePermissionType>, bool>> $shareCompatiblePermissionTypeClasses */
 		$shareCompatiblePermissionTypeClasses = [];
 		foreach (array_keys($shares) as $id) {
+			$id = (string)$id;
 			$shareCompatiblePermissionTypeClasses[$id] = [];
 			foreach ($registryGenericPermissionTypeClasses as $permissionTypeClass) {
 				$shareCompatiblePermissionTypeClasses[$id][$permissionTypeClass] = true;
@@ -954,7 +979,7 @@ final readonly class SharingBackend implements ISharingBackend {
 		$shares = array_map(static fn (array $share): Share => new Share(
 			$share['id'],
 			$share['owner'],
-			$share['last_updated'],
+			self::parseTimestamp($share['last_updated']),
 			$share['state'],
 			$share['sources'],
 			$share['recipients'],
@@ -982,6 +1007,7 @@ final readonly class SharingBackend implements ISharingBackend {
 		}
 
 		foreach (array_keys($shares) as $id) {
+			$id = (string)$id;
 			foreach (array_keys($registryPropertyTypes) as $propertyTypeClass) {
 				$share = $shares[$id];
 				if (
@@ -1004,5 +1030,20 @@ final readonly class SharingBackend implements ISharingBackend {
 		}
 
 		return array_values($shares);
+	}
+
+	private static function parseTimestamp(int $timestampMs): \DateTimeImmutable {
+		if (method_exists(\DateTimeImmutable::class, 'createFromTimestamp')) {
+			// with php 8.3 the method doesn't exist and psalm doesn't know the return type
+			/** @psalm-suppress MixedReturnStatement */
+			return \DateTimeImmutable::createFromTimestamp((float)$timestampMs / 1000.0);
+		}
+
+		$time = \DateTimeImmutable::createFromFormat('U.u', number_format((float)$timestampMs / 1000.0, 3, '.', ''));
+		if ($time === false) {
+			throw new \RuntimeException('Invalid timestamp for share: ' . $timestampMs);
+		}
+
+		return $time;
 	}
 }

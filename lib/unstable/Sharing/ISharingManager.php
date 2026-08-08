@@ -50,12 +50,11 @@ interface ISharingManager {
 	public function generateSecret(): string;
 
 	/**
-	 * Generate a new timestamp in milliseconds since the UNIX epoch.
+	 * Get the current time
 	 *
-	 * @return non-negative-int
 	 * @experimental 35.0.0
 	 */
-	public function generateTimestamp(): int;
+	public function getTime(): \DateTimeImmutable;
 
 	/**
 	 * Create a new share.
@@ -216,6 +215,7 @@ interface ISharingManager {
 	 * Get multiple shares.
 	 *
 	 * @param ?class-string<IShareSourceType> $filterSourceTypeClass
+	 * @param ?non-empty-string $filterSourceTypeValue
 	 * @param ?positive-int $limit
 	 * @return list<Share>
 	 * @experimental 35.0.0

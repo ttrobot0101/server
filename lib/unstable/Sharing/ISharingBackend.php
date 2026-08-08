@@ -29,7 +29,7 @@ interface ISharingBackend {
 	 *
 	 * @experimental 35.0.0
 	 */
-	public function createShare(string $id, ShareUser $owner, int $lastUpdated): void;
+	public function createShare(string $id, ShareUser $owner, \DateTimeImmutable $lastUpdated): void;
 
 	/**
 	 * Perform all updates when the owner was deleted.
@@ -174,6 +174,7 @@ interface ISharingBackend {
 	 * Get multiple shares.
 	 *
 	 * @param ?class-string<IShareSourceType> $filterSourceTypeClass
+	 * @param ?non-empty-string $filterSourceTypeValue
 	 * @param ?positive-int $limit
 	 * @return list<Share>
 	 * @experimental 35.0.0
@@ -199,9 +200,8 @@ interface ISharingBackend {
 	 * Set the last updated timestamp for multiple shares.
 	 *
 	 * @param non-empty-list<string> $ids
-	 * @param non-negative-int $lastUpdated
 	 * @throws ShareNotFoundException
 	 * @experimental 35.0.0
 	 */
-	public function setLastUpdated(array $ids, int $lastUpdated): void;
+	public function setLastUpdated(array $ids, \DateTimeImmutable $lastUpdated): void;
 }
