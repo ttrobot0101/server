@@ -4943,7 +4943,9 @@
                             "defaultBackgroundColor",
                             "inverted",
                             "cacheBuster",
-                            "enabledThemes"
+                            "enabledThemes",
+                            "toastTimeout",
+                            "toastTimeoutValues"
                         ],
                         "properties": {
                             "name": {
@@ -5022,6 +5024,17 @@
                                 "type": "array",
                                 "items": {
                                     "type": "string"
+                                }
+                            },
+                            "toastTimeout": {
+                                "type": "integer",
+                                "format": "int64"
+                            },
+                            "toastTimeoutValues": {
+                                "type": "array",
+                                "items": {
+                                    "type": "integer",
+                                    "format": "int64"
                                 }
                             }
                         }
@@ -40462,6 +40475,15 @@
                             "type": "string",
                             "nullable": true,
                             "minLength": 1
+                        }
+                    },
+                    {
+                        "name": "filterState",
+                        "in": "query",
+                        "description": "State to filter by.",
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
                         }
                     },
                     {
