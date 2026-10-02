@@ -53,9 +53,6 @@ This file is generated from multiple sources. Included packages:
 - @mdi/js
 	- version: 7.4.47
 	- license: Apache-2.0
-- @mdi/svg
-	- version: 7.4.47
-	- license: Apache-2.0
 - @nextcloud/auth
 	- version: 2.6.0
 	- license: GPL-3.0-or-later
@@ -195,7 +192,7 @@ This file is generated from multiple sources. Included packages:
 	- version: 11.3.0
 	- license: MIT
 - axios
-	- version: 1.18.1
+	- version: 1.20.0
 	- license: MIT
 - base64-js
 	- version: 1.5.1
@@ -213,7 +210,7 @@ This file is generated from multiple sources. Included packages:
 	- version: 0.5.0
 	- license: MIT
 - dompurify
-	- version: 3.4.15
+	- version: 3.4.16
 	- license: (MPL-2.0 OR Apache-2.0)
 - escape-html
 	- version: 1.0.3
