@@ -81,6 +81,7 @@ class ShareByMailProviderTest extends TestCase {
 			->willReturnCallback(function ($text, $parameters = []) {
 				return vsprintf($text, $parameters);
 			});
+		$this->l->method('getLanguageCode')->willReturn('de');
 		$this->config = $this->createMock(IConfig::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 		$this->rootFolder = $this->createMock('OCP\Files\IRootFolder');
@@ -437,7 +438,9 @@ class ShareByMailProviderTest extends TestCase {
 			->willReturnCallback(function () use (&$calls) {
 				$expected = array_shift($calls);
 				$this->assertEquals($expected, func_get_args());
-				return $this->createMock(IEMailTemplate::class);
+				$template = $this->createMock(IEMailTemplate::class);
+				$template->expects($this->once())->method('setLanguage')->with('de');
+				return $template;
 			});
 
 		// Main email notification is sent as well as the password
@@ -616,7 +619,9 @@ class ShareByMailProviderTest extends TestCase {
 			->willReturnCallback(function () use (&$calls) {
 				$expected = array_shift($calls);
 				$this->assertEquals($expected, func_get_args());
-				return $this->createMock(IEMailTemplate::class);
+				$template = $this->createMock(IEMailTemplate::class);
+				$template->expects($this->once())->method('setLanguage')->with('de');
+				return $template;
 			});
 
 		// Main email notification is sent as well as the password to owner
@@ -1336,6 +1341,10 @@ class ShareByMailProviderTest extends TestCase {
 			->willReturn($template);
 		$template
 			->expects($this->once())
+			->method('setLanguage')
+			->with('de');
+		$template
+			->expects($this->once())
 			->method('addHeader');
 		$template
 			->expects($this->once())
@@ -1374,14 +1383,10 @@ class ShareByMailProviderTest extends TestCase {
 			->expects($this->once())
 			->method('setReplyTo')
 			->with(['owner@example.com' => 'Mrs. Owner User']);
-		$this->defaults
-			->expects($this->exactly(2))
-			->method('getSlogan')
-			->willReturn('Testing like 1990');
 		$template
 			->expects($this->once())
 			->method('addFooter')
-			->with('UnitTestCloud - Testing like 1990');
+			->with();
 		$template
 			->expects($this->once())
 			->method('setSubject')
@@ -1520,14 +1525,10 @@ class ShareByMailProviderTest extends TestCase {
 			->expects($this->once())
 			->method('setReplyTo')
 			->with(['owner@example.com' => 'Mrs. Owner User']);
-		$this->defaults
-			->expects($this->exactly(2))
-			->method('getSlogan')
-			->willReturn('Testing like 1990');
 		$template
 			->expects($this->once())
 			->method('addFooter')
-			->with('UnitTestCloud - Testing like 1990');
+			->with();
 		$template
 			->expects($this->once())
 			->method('setSubject')
@@ -1640,14 +1641,10 @@ class ShareByMailProviderTest extends TestCase {
 			->expects($this->once())
 			->method('setReplyTo')
 			->with(['owner@example.com' => 'Mrs. Owner User']);
-		$this->defaults
-			->expects($this->exactly(2))
-			->method('getSlogan')
-			->willReturn('Testing like 1990');
 		$template
 			->expects($this->once())
 			->method('addFooter')
-			->with('UnitTestCloud - Testing like 1990');
+			->with();
 		$template
 			->expects($this->once())
 			->method('setSubject')
@@ -1999,6 +1996,7 @@ class ShareByMailProviderTest extends TestCase {
 		$this->mailer->method('createEMailTemplate')->willReturn($template);
 		$this->mailer->expects($this->once())->method('send')->with($message);
 
+		$template->expects($this->once())->method('setLanguage')->with('de');
 		$template->expects($this->once())->method('addBodySender')->with('Sharer', $senderSubline);
 		$template->expects($this->once())->method('addHeading')->with('Sharer shared file.txt with you', 'Sharer shared file.txt with you');
 		$template->expects($this->once())->method('addBodyNote')->with('A note & more', 'Note');
@@ -2012,6 +2010,41 @@ class ShareByMailProviderTest extends TestCase {
 		$share->method('getSharedWith')->willReturn('john@doe.com');
 		$share->method('getNode')->willReturn($node);
 		$share->method('getNote')->willReturn('A note & more');
+		$share->method('getToken')->willReturn('token');
+
+		self::invokePrivate($provider, 'sendNote', [$share]);
+	}
+
+	public function testSendNoteDoesNotEscapeHeading(): void {
+		$provider = $this->getInstance();
+		$initiatorUser = $this->createMock(IUser::class);
+		$initiatorUser->method('getDisplayName')->willReturn('Tom & Jerry\'s');
+		$initiatorUser->method('getEMailAddress')->willReturn(null);
+		$this->userManager->method('get')->with('InitiatorUser')->willReturn($initiatorUser);
+		$this->settingsManager->method('replyToInitiator')->willReturn(false);
+		$this->defaults->method('getName')->willReturn('UnitTestCloud');
+		$this->urlGenerator->method('linkToRouteAbsolute')->willReturn('https://example.com/file.txt');
+
+		$message = $this->createMock(Message::class);
+		$this->mailer->method('createMessage')->willReturn($message);
+		$template = $this->createMock(IEMailTemplate::class);
+		$this->mailer->method('createEMailTemplate')->willReturn($template);
+		$template
+			->expects($this->once())
+			->method('addHeading')
+			->with(
+				'Tom & Jerry\'s shared file.txt with you',
+				'Tom & Jerry\'s shared file.txt with you'
+			);
+		$this->mailer->expects($this->once())->method('send')->with($message);
+
+		$node = $this->createMock(File::class);
+		$node->method('getName')->willReturn('file.txt');
+		$share = $this->createMock(IShare::class);
+		$share->method('getSharedBy')->willReturn('InitiatorUser');
+		$share->method('getSharedWith')->willReturn('john@doe.com');
+		$share->method('getNode')->willReturn($node);
+		$share->method('getNote')->willReturn('Some note');
 		$share->method('getToken')->willReturn('token');
 
 		self::invokePrivate($provider, 'sendNote', [$share]);

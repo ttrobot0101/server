@@ -367,6 +367,7 @@ class ShareByMailProvider extends DefaultShareProvider implements IShareProvider
 			'shareWith' => $shareWith,
 			'note' => $note
 		]);
+		$emailTemplate->setLanguage($this->l->getLanguageCode());
 
 		$emailTemplate->setSubject($this->l->t('%1$s shared %2$s with you', [$initiatorDisplayName, $filename]));
 		$emailTemplate->addHeader();
@@ -415,13 +416,10 @@ class ShareByMailProvider extends DefaultShareProvider implements IShareProvider
 		$message->setFrom([Util::getDefaultEmailAddress($instanceName) => $senderName]);
 
 		// The "Reply-To" is set to the sharer if an mail address is configured
-		// also the default footer contains a "Do not reply" which needs to be adjusted.
 		if ($initiatorEmail !== null) {
 			$message->setReplyTo([$initiatorEmail => $initiatorDisplayName]);
-			$emailTemplate->addFooter($instanceName . ($this->defaults->getSlogan() !== '' ? ' - ' . $this->defaults->getSlogan() : ''));
-		} else {
-			$emailTemplate->addFooter();
 		}
+		$emailTemplate->addFooter();
 
 		$message->useTemplate($emailTemplate);
 		$failedRecipients = $this->mailer->send($message);
@@ -468,6 +466,7 @@ class ShareByMailProvider extends DefaultShareProvider implements IShareProvider
 			'initiatorEmail' => $initiatorEmailAddress,
 			'shareWith' => $shareWith,
 		]);
+		$emailTemplate->setLanguage($this->l->getLanguageCode());
 
 		$emailTemplate->setSubject($this->l->t('Password to access %1$s shared to you by %2$s', [$filename, $initiatorDisplayName]));
 		$emailTemplate->addHeader();
@@ -546,11 +545,12 @@ class ShareByMailProvider extends DefaultShareProvider implements IShareProvider
 		$message = $this->mailer->createMessage();
 
 		$emailTemplate = $this->mailer->createEMailTemplate('shareByMail.sendNote');
+		$emailTemplate->setLanguage($this->l->getLanguageCode());
 
 		$emailTemplate->setSubject($this->l->t('%s added a note to a file shared with you', [$initiatorDisplayName]));
 		$emailTemplate->addHeader();
 		$emailTemplate->addBodySender($initiatorDisplayName, $this->settingsManager->replyToInitiator() ? ($initiatorEmailAddress ?? '') : '');
-		$emailTemplate->addHeading(htmlspecialchars($heading), $heading);
+		$emailTemplate->addHeading($heading, $heading);
 		$emailTemplate->addBodyNote($note, $this->l->t('Note'));
 
 		$link = $this->urlGenerator->linkToRouteAbsolute('files_sharing.sharecontroller.showShare',
@@ -575,10 +575,8 @@ class ShareByMailProvider extends DefaultShareProvider implements IShareProvider
 		$message->setFrom([Util::getDefaultEmailAddress($instanceName) => $senderName]);
 		if ($this->settingsManager->replyToInitiator() && $initiatorEmailAddress !== null) {
 			$message->setReplyTo([$initiatorEmailAddress => $initiatorDisplayName]);
-			$emailTemplate->addFooter($instanceName . ' - ' . $this->defaults->getSlogan());
-		} else {
-			$emailTemplate->addFooter();
 		}
+		$emailTemplate->addFooter();
 
 		$message->setTo([$recipient]);
 		$message->useTemplate($emailTemplate);
@@ -614,6 +612,7 @@ class ShareByMailProvider extends DefaultShareProvider implements IShareProvider
 			'initiatorEmail' => $initiatorEMailAddress,
 			'shareWith' => $shareWith,
 		]);
+		$emailTemplate->setLanguage($this->l->getLanguageCode());
 
 		$emailTemplate->setSubject($this->l->t('Password to access %1$s shared by you with %2$s', [$filename, $shareWith]));
 		$emailTemplate->addHeader();

@@ -36,6 +36,10 @@ class EMailTemplate implements IEMailTemplate {
 	protected bool $bodyListOpened = false;
 	/** indicated if the footer is added */
 	protected bool $footerAdded = false;
+	/** language of the recipient, set by setLanguage */
+	protected ?string $language = null;
+	/** name of the person the email is sent on behalf of, set by addBodySender */
+	protected ?string $senderName = null;
 	/** @var array<array{name: string, content: string, mimeType: string}> images to embed inline, referenced via cid: */
 	protected array $inlineImages = [];
 
@@ -52,6 +56,7 @@ class EMailTemplate implements IEMailTemplate {
 		:root{color-scheme:light dark;supported-color-schemes:light dark}
 		body{margin:0;padding:0;width:100%!important}
 		@media only screen and (max-width:640px){
+			.nc-page-pad{padding:0!important}
 			.nc-card{border-radius:0!important;width:100%!important}
 			.nc-pad{padding-left:20px!important;padding-right:20px!important}
 			.nc-button{display:block!important;margin:0 0 12px 0!important}
@@ -73,7 +78,7 @@ class EMailTemplate implements IEMailTemplate {
 <body class="nc-page" style="-moz-box-sizing:border-box;-ms-text-size-adjust:100%;-webkit-box-sizing:border-box;-webkit-text-size-adjust:100%;Margin:0;background:#f4f4f5;box-sizing:border-box;margin:0;min-width:100%;padding:0;width:100%!important">
 <table role="presentation" class="nc-page" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;border-collapse:collapse;border-spacing:0;width:100%">
 	<tr>
-		<td align="center" style="padding:32px 0">
+		<td class="nc-page-pad" align="center" style="padding:32px 0">
 			<table role="presentation" class="nc-card" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-collapse:separate;border-radius:16px;border-spacing:0;max-width:600px;overflow:hidden;text-align:left;width:600px">
 EOF;
 
@@ -303,6 +308,13 @@ EOF;
 			$logoSrc = $this->urlGenerator->getAbsoluteURL($this->themingDefaults->getLogo(false));
 		}
 		$this->htmlBody .= vsprintf($this->header, [$this->themingDefaults->getDefaultColorPrimary(), $logoSrc, $this->themingDefaults->getName(), $logoSizeDimensions]);
+	}
+
+	#[\Override]
+	public function setLanguage(string $language): void {
+		if ($language !== '') {
+			$this->language = $language;
+		}
 	}
 
 	/**
@@ -585,6 +597,7 @@ EOF;
 		if ($this->footerAdded) {
 			return;
 		}
+		$this->senderName = $displayName;
 
 		$this->ensureBodyIsClosed();
 
@@ -742,13 +755,25 @@ EOF;
 	 */
 	#[\Override]
 	public function addFooter(string $text = '', ?string $lang = null): void {
+		$lang ??= $this->language;
+		$plainText = null;
 		if ($text === '') {
 			$l10n = $this->l10nFactory->get('lib', $lang);
 			$slogan = $this->themingDefaults->getSlogan($lang);
 			if ($slogan !== '') {
 				$slogan = ' - ' . $slogan;
 			}
-			$text = $this->themingDefaults->getName() . $slogan . '<br>' . $l10n->t('This is an automatically sent email, please do not reply.');
+			$text = $this->themingDefaults->getName() . $slogan . '<br>';
+			if ($this->senderName !== null) {
+				$url = $this->urlGenerator->getAbsoluteURL('/');
+				$host = parse_url($url, PHP_URL_HOST) ?: $url;
+				$link = '<a class="nc-link" href="' . htmlspecialchars($url) . '" style="color:inherit">' . htmlspecialchars($host) . '</a>';
+				$text .= $l10n->t('This email was sent from %1$s on behalf of %2$s.', [$link, htmlspecialchars($this->senderName)]);
+				$plainText = $this->themingDefaults->getName() . $slogan . PHP_EOL
+					. $l10n->t('This email was sent from %1$s on behalf of %2$s.', [$host, $this->senderName]);
+			} else {
+				$text .= $l10n->t('This is an automatically sent email, please do not reply.');
+			}
 		}
 
 		if ($this->footerAdded) {
@@ -761,7 +786,7 @@ EOF;
 		$this->htmlBody .= vsprintf($this->footer, [$text]);
 		$this->htmlBody .= $this->tail;
 		$this->plainBody .= PHP_EOL . '-- ' . PHP_EOL;
-		$this->plainBody .= str_replace('<br>', PHP_EOL, $text);
+		$this->plainBody .= $plainText ?? str_replace('<br>', PHP_EOL, $text);
 	}
 
 	/**
@@ -782,7 +807,28 @@ EOF;
 			$this->ensureBodyIsClosed();
 			$this->htmlBody .= $this->tail;
 		}
-		return $this->htmlBody;
+		if ($this->language === null) {
+			return $this->htmlBody;
+		}
+
+		$direction = $this->l10nFactory->getLanguageDirection($this->language);
+		$lang = htmlspecialchars(str_replace('_', '-', $this->language));
+		$html = str_replace('lang="en" xml:lang="en"', 'lang="' . $lang . '" xml:lang="' . $lang . '" dir="' . $direction . '"', $this->htmlBody);
+		return $direction === 'rtl' ? $this->mirrorStyles($html) : $html;
+	}
+
+	/**
+	 * Swap left and right in the template's own styles: the style attributes
+	 * and the style element. Text content is never touched.
+	 */
+	protected function mirrorStyles(string $html): string {
+		$mirror = static function (array $match): string {
+			// 4-value margin and padding shorthands are top, right, bottom, left
+			$css = preg_replace('/\\b(margin|padding):([^\\s;"!]+) ([^\\s;"!]+) ([^\\s;"!]+) ([^\\s;"!]+)/', '$1:$2 $5 $4 $3', $match[2]) ?? $match[2];
+			return $match[1] . strtr($css, ['left' => 'right', 'right' => 'left']) . $match[3];
+		};
+		$html = preg_replace_callback('/(style=")([^"]*)(")/', $mirror, $html) ?? $html;
+		return preg_replace_callback('/(<style[^>]*>)(.*?)(<\\/style>)/s', $mirror, $html) ?? $html;
 	}
 
 	/**
